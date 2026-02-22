@@ -176,100 +176,60 @@ export default function ProductionDashboard({
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [overallProgress, setOverallProgress] = useState(0);
 
-  // Simulation Logic
+  // WebSocket Logic
   useEffect(() => {
     if (!isActive) return;
 
-    let step = 0;
-    const interval = setInterval(() => {
-      step++;
-      const now = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' });
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}`);
 
-      // Helper to add log
-      const addLog = (from: string, message: string, to?: string, type: LogEntry['type'] = 'info') => {
-        setLogs(prev => [...prev, {
-          id: Math.random().toString(36),
-          timestamp: now,
-          from,
-          to,
-          message,
-          type
-        }]);
-      };
+    ws.onopen = () => {
+      console.log('Connected to Production Engine');
+    };
 
-      // Helper to update bot
-      const updateBot = (id: string, updates: Partial<BotAgent>) => {
-        setBots(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
-      };
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'production:state_update') {
+          const state = data.state;
+          
+          // Reset all to idle first
+          setBots(prev => prev.map(b => ({ ...b, status: 'idle' })));
 
-      // Orchestration Sequence
-      if (step === 1) {
-        updateBot('sbaro', { status: 'working', progress: 10 });
-        addLog('sbaro_bot', 'Initializing production session...', undefined, 'command');
-      }
-      if (step === 5) {
-        updateBot('sbaro', { progress: 40 });
-        addLog('sbaro_bot', 'Analyzing genre and audience requirements...');
-      }
-      if (step === 10) {
-        updateBot('sbaro', { status: 'completed', progress: 100 });
-        updateBot('nassro', { status: 'working', progress: 5 });
-        addLog('sbaro_bot', 'Generate Episode 1 Script', 'nassro_bot', 'command');
-      }
-      if (step === 15) {
-        updateBot('nassro', { progress: 30 });
-        addLog('nassro_bot', 'Structuring 3-act narrative...');
-      }
-      if (step === 25) {
-        updateBot('nassro', { progress: 60 });
-        addLog('nassro_bot', 'Injecting viral hooks and cliffhangers...');
-      }
-      if (step === 35) {
-        updateBot('nassro', { status: 'completed', progress: 100 });
-        updateBot('mina', { status: 'working', progress: 10 });
-        updateBot('wawa', { status: 'working', progress: 10 });
-        addLog('nassro_bot', 'Script ready. Requesting assets.', 'sbaro_bot', 'success');
-        addLog('sbaro_bot', 'Generate Visual Prompts', 'mina_bot', 'command');
-        addLog('sbaro_bot', 'Analyze Audio Requirements', 'wawa_bot', 'command');
-      }
-      if (step === 45) {
-        updateBot('mina', { progress: 50 });
-        addLog('mina_bot', 'Calculating lighting and camera angles...');
-      }
-      if (step === 50) {
-        updateBot('wawa', { progress: 50 });
-        addLog('wawa_bot', 'Selecting background score: "Dark Cinematic"...');
-      }
-      if (step === 60) {
-        updateBot('mina', { status: 'completed', progress: 100 });
-        updateBot('wawa', { status: 'completed', progress: 100 });
-        updateBot('jrana', { status: 'working', progress: 20 });
-        addLog('sbaro_bot', 'All assets ready. Begin assembly.', 'jrana_bot', 'command');
-      }
-      if (step === 70) {
-        updateBot('jrana', { progress: 60 });
-        addLog('jrana_bot', 'Sequencing timeline (120s)...');
-      }
-      if (step === 80) {
-        updateBot('jrana', { progress: 90 });
-        addLog('jrana_bot', 'Final render pass...');
-      }
-      if (step === 90) {
-        updateBot('jrana', { status: 'completed', progress: 100 });
-        addLog('jrana_bot', 'Production complete.', 'sbaro_bot', 'success');
-        setOverallProgress(100);
-        if (onComplete) onComplete();
-        clearInterval(interval);
-      }
+          if (state === 'INITIALIZING') {
+            setBots(prev => prev.map(b => b.id === 'sbaro' ? { ...b, status: 'working', progress: 20 } : b));
+          } else if (state === 'SCRIPT_GENERATING') {
+            setBots(prev => prev.map(b => b.id === 'sbaro' ? { ...b, status: 'completed', progress: 100 } : b));
+            setBots(prev => prev.map(b => b.id === 'nassro' ? { ...b, status: 'working', progress: 20 } : b));
+          } else if (state === 'VISUAL_CREATING') {
+            setBots(prev => prev.map(b => ['sbaro', 'nassro'].includes(b.id) ? { ...b, status: 'completed', progress: 100 } : b));
+            setBots(prev => prev.map(b => b.id === 'mina' ? { ...b, status: 'working', progress: 20 } : b));
+          } else if (state === 'AUDIO_PROCESSING') {
+            setBots(prev => prev.map(b => ['sbaro', 'nassro', 'mina'].includes(b.id) ? { ...b, status: 'completed', progress: 100 } : b));
+            setBots(prev => prev.map(b => b.id === 'wawa' ? { ...b, status: 'working', progress: 20 } : b));
+          } else if (state === 'VIDEO_ASSEMBLING') {
+            setBots(prev => prev.map(b => ['sbaro', 'nassro', 'mina', 'wawa'].includes(b.id) ? { ...b, status: 'completed', progress: 100 } : b));
+            setBots(prev => prev.map(b => b.id === 'jrana' ? { ...b, status: 'working', progress: 20 } : b));
+          } else if (state === 'COMPLETED') {
+            setBots(prev => prev.map(b => ({ ...b, status: 'completed', progress: 100 })));
+            setOverallProgress(100);
+            if (onComplete) onComplete();
+          }
 
-      // Update overall progress roughly
-      if (step < 90) {
-        setOverallProgress(Math.min(99, Math.floor((step / 90) * 100)));
+        } else if (data.type === 'production:bot_log') {
+          setLogs(prev => [...prev, data.log]);
+        } else if (data.type === 'production:progress') {
+          setOverallProgress(data.progress);
+        }
+      } catch (e) {
+        console.error("Failed to parse WebSocket message", e);
       }
+    };
 
-    }, 150); // Speed of simulation
-
-    return () => clearInterval(interval);
+    return () => {
+      ws.close();
+    };
   }, [isActive, onComplete]);
 
   return (

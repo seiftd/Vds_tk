@@ -3,6 +3,7 @@ import { getDb } from "./db";
 import { GoogleGenAI, Type } from "@google/genai";
 import { encrypt, decrypt } from "./encryption";
 import crypto from "crypto";
+import { productionEngine } from "./production";
 
 // Lazy initialization to ensure env vars are loaded
 const getAI = () => {
@@ -257,6 +258,17 @@ export function registerRoutes(app: Express) {
       
       const storyId = storyResult.lastInsertRowid;
 
+      // Initialize Production Session
+      db.prepare(`
+        INSERT INTO production_sessions (id, story_id, status, progress)
+        VALUES (?, ?, ?, ?)
+      `).run(
+        crypto.randomUUID(),
+        storyId,
+        'PENDING',
+        0
+      );
+
       // Initialize Story Memory
       const initialMemory = {
         plot: {
@@ -322,6 +334,9 @@ export function registerRoutes(app: Express) {
           ep.cta_script || ""
         );
       }
+
+      // Start Production Engine
+      productionEngine.startProduction(storyId.toString());
 
       res.json({ id: storyId, ...generatedStory });
 

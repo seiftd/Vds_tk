@@ -173,6 +173,40 @@ export function initDb() {
     )
   `);
 
+  // Version Control
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS story_versions (
+      id TEXT PRIMARY KEY,
+      story_id INTEGER,
+      snapshot TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS episode_versions (
+      id TEXT PRIMARY KEY,
+      episode_id INTEGER,
+      snapshot TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (episode_id) REFERENCES episodes(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Continuity Guardian Logs
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS continuity_checks (
+      id TEXT PRIMARY KEY,
+      story_id INTEGER,
+      episode_id INTEGER,
+      issues_found TEXT,
+      resolution_action TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
+    )
+  `);
+
   // Initialize default rows if they don't exist
   db.prepare("INSERT OR IGNORE INTO api_keys (id) VALUES (1)").run();
   db.prepare("INSERT OR IGNORE INTO telegram_settings (id) VALUES (1)").run();
