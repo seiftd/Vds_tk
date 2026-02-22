@@ -119,6 +119,52 @@ export default function EpisodeDetail() {
         </div>
       </div>
 
+      {/* Viral Export Pack */}
+      <div className="mb-8 bg-zinc-900/30 border border-white/5 rounded-2xl p-6">
+        <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          <Share2 className="w-5 h-5 text-indigo-400" />
+          Viral Export Pack
+        </h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Thumbnail Prompt</h3>
+              <div className="bg-zinc-950/50 p-4 rounded-xl border border-white/5">
+                <p className="text-sm text-zinc-300 leading-relaxed mb-3">{episode.thumbnail_prompt}</p>
+                <div className="flex items-center gap-2 text-xs text-indigo-400 font-medium bg-indigo-500/10 px-3 py-1.5 rounded-lg w-fit">
+                  <Type className="w-3 h-3" />
+                  Overlay Text: "{episode.thumbnail_text_overlay || 'WATCH UNTIL THE END'}"
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Hashtags</h3>
+              <p className="text-sm text-indigo-400 font-mono leading-relaxed">
+                {episode.hashtags}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Short Caption</h3>
+              <p className="text-sm text-zinc-300 bg-zinc-950/50 p-3 rounded-lg border border-white/5">
+                {episode.caption_short || episode.summary}
+              </p>
+            </div>
+            
+            <div>
+              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Call to Action</h3>
+              <p className="text-sm text-white font-bold bg-emerald-500/10 text-emerald-400 p-3 rounded-lg border border-emerald-500/20">
+                {episode.cta_script || "Follow for Part " + (episode.episode_number + 1)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Scenes List */}
       {scenes.length === 0 ? (
         <div className="text-center py-20 bg-zinc-900/30 border border-white/5 rounded-2xl border-dashed">

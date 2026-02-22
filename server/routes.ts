@@ -2,7 +2,14 @@ import { Express, Request, Response } from "express";
 import { getDb } from "./db";
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Lazy initialization to ensure env vars are loaded
+const getAI = () => {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+    throw new Error("Valid API Key not found. Please configure GEMINI_API_KEY in your environment.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 export function registerRoutes(app: Express) {
   
@@ -55,10 +62,14 @@ export function registerRoutes(app: Express) {
         - Strong cliffhangers.
         - Cohesive story arc.
         - Mystery layers and plot twists.
+        
+        For the thumbnail:
+        - Create a dramatic, clickable visual prompt.
+        - Suggest a short, punchy text overlay (max 5 words) that creates curiosity.
       `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash-exp",
+      const response = await getAI().models.generateContent({
+        model: "gemini-2.0-flash",
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -80,9 +91,13 @@ export function registerRoutes(app: Express) {
                                 viral_score: { type: Type.INTEGER },
                                 seo_description: { type: Type.STRING },
                                 hashtags: { type: Type.STRING },
-                                thumbnail_prompt: { type: Type.STRING }
+                                thumbnail_prompt: { type: Type.STRING },
+                                thumbnail_text_overlay: { type: Type.STRING },
+                                caption_short: { type: Type.STRING },
+                                caption_long: { type: Type.STRING },
+                                cta_script: { type: Type.STRING }
                             },
-                            required: ["episode_number", "title", "summary", "hook", "cliffhanger", "viral_score", "seo_description", "hashtags", "thumbnail_prompt"]
+                            required: ["episode_number", "title", "summary"]
                         }
                     }
                 },
@@ -91,7 +106,17 @@ export function registerRoutes(app: Express) {
         }
       });
 
-      const generatedStory = JSON.parse(response.text() || "{}");
+      let text = response.text();
+      // Clean markdown code blocks if present
+      text = text.replace(/```json\n?|```/g, "").trim();
+      
+      let generatedStory;
+      try {
+        generatedStory = JSON.parse(text);
+      } catch (e) {
+        console.error("Failed to parse Gemini response:", text);
+        throw new Error("Invalid JSON response from AI: " + text.substring(0, 100));
+      }
 
       // 2. Save to DB
       const insertStory = db.prepare(`
@@ -112,8 +137,8 @@ export function registerRoutes(app: Express) {
       const storyId = storyResult.lastInsertRowid;
 
       const insertEpisode = db.prepare(`
-        INSERT INTO episodes (story_id, episode_number, title, summary, hook, cliffhanger, viral_score, seo_description, hashtags, thumbnail_prompt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO episodes (story_id, episode_number, title, summary, hook, cliffhanger, viral_score, seo_description, hashtags, thumbnail_prompt, thumbnail_text_overlay, caption_short, caption_long, cta_script)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       for (const ep of generatedStory.episodes) {
@@ -122,20 +147,24 @@ export function registerRoutes(app: Express) {
           ep.episode_number,
           ep.title,
           ep.summary,
-          ep.hook,
-          ep.cliffhanger,
-          ep.viral_score,
-          ep.seo_description,
-          ep.hashtags,
-          ep.thumbnail_prompt
+          ep.hook || "",
+          ep.cliffhanger || "",
+          ep.viral_score || 0,
+          ep.seo_description || "",
+          ep.hashtags || "",
+          ep.thumbnail_prompt || "",
+          ep.thumbnail_text_overlay || "",
+          ep.caption_short || "",
+          ep.caption_long || "",
+          ep.cta_script || ""
         );
       }
 
       res.json({ id: storyId, ...generatedStory });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Story generation error:", error);
-      res.status(500).json({ error: "Failed to generate story" });
+      res.status(500).json({ error: error.message || "Failed to generate story" });
     }
   });
 
@@ -167,8 +196,8 @@ export function registerRoutes(app: Express) {
             - Netflix documentary style + TikTok pacing.
         `;
 
-        const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash-exp",
+        const response = await getAI().models.generateContent({
+            model: "gemini-2.0-flash",
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
@@ -200,7 +229,17 @@ export function registerRoutes(app: Express) {
             }
         });
 
-        const generatedScenes = JSON.parse(response.text() || "{}");
+        let text = response.text();
+        // Clean markdown code blocks if present
+        text = text.replace(/```json\n?|```/g, "").trim();
+
+        let generatedScenes;
+        try {
+            generatedScenes = JSON.parse(text);
+        } catch (e) {
+            console.error("Failed to parse Gemini response:", text);
+            throw new Error("Invalid JSON response from AI");
+        }
 
         // Save scenes
         const insertScene = db.prepare(`

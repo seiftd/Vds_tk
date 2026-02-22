@@ -35,9 +35,19 @@ export function initDb() {
       seo_description TEXT,
       hashtags TEXT,
       thumbnail_prompt TEXT,
+      thumbnail_text_overlay TEXT,
+      caption_short TEXT,
+      caption_long TEXT,
+      cta_script TEXT,
       FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
     )
   `);
+
+  // Migrations for existing databases
+  try { db.exec("ALTER TABLE episodes ADD COLUMN thumbnail_text_overlay TEXT"); } catch (e) {}
+  try { db.exec("ALTER TABLE episodes ADD COLUMN caption_short TEXT"); } catch (e) {}
+  try { db.exec("ALTER TABLE episodes ADD COLUMN caption_long TEXT"); } catch (e) {}
+  try { db.exec("ALTER TABLE episodes ADD COLUMN cta_script TEXT"); } catch (e) {}
 
   // Scenes Table
   db.exec(`

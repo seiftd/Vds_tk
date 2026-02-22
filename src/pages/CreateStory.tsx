@@ -25,13 +25,16 @@ export default function CreateStory() {
         body: JSON.stringify(formData)
       });
       
-      if (!res.ok) throw new Error('Failed to generate');
-      
       const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to generate');
+      }
+      
       navigate(`/story/${data.id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Failed to generate story. Please try again.');
+      alert(`Error: ${error.message}`);
     } finally {
       setLoading(false);
     }
