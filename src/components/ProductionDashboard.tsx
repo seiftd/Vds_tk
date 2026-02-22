@@ -11,7 +11,8 @@ import {
   Loader2,
   Terminal,
   Cpu,
-  Activity
+  Activity,
+  Zap
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -41,9 +42,9 @@ interface LogEntry {
 // --- Constants ---
 
 const INITIAL_BOTS: BotAgent[] = [
-  { id: 'sbaro', name: 'sbaro_bot', role: 'Director AI', icon: Clapperboard, color: 'text-purple-400', status: 'idle', progress: 0 },
-  { id: 'nassro', name: 'nassro_bot', role: 'Script Master', icon: PenTool, color: 'text-blue-400', status: 'idle', progress: 0 },
-  { id: 'mina', name: 'mina_bot', role: 'Visual Artist', icon: ImageIcon, color: 'text-pink-400', status: 'idle', progress: 0 },
+  { id: 'sbaro', name: 'sbaro_bot', role: 'Director AI', icon: Clapperboard, color: 'text-neon-purple', status: 'idle', progress: 0 },
+  { id: 'nassro', name: 'nassro_bot', role: 'Script Master', icon: PenTool, color: 'text-neon-cyan', status: 'idle', progress: 0 },
+  { id: 'mina', name: 'mina_bot', role: 'Visual Artist', icon: ImageIcon, color: 'text-soft-magenta', status: 'idle', progress: 0 },
   { id: 'wawa', name: 'wawa_bot', role: 'Audio Engineer', icon: Music, color: 'text-emerald-400', status: 'idle', progress: 0 },
   { id: 'jrana', name: 'jrana_bot', role: 'Video Editor', icon: Film, color: 'text-amber-400', status: 'idle', progress: 0 },
 ];
@@ -55,23 +56,23 @@ const BotCard: React.FC<{ bot: BotAgent }> = ({ bot }) => {
     <motion.div 
       layout
       className={clsx(
-        "relative p-4 rounded-2xl border backdrop-blur-md transition-all duration-300 overflow-hidden",
-        bot.status === 'working' ? "bg-zinc-900/80 border-indigo-500/50 shadow-[0_0_30px_-10px_rgba(99,102,241,0.3)]" : "bg-zinc-900/40 border-white/5"
+        "relative p-4 rounded-2xl border backdrop-blur-md transition-all duration-300 overflow-hidden group",
+        bot.status === 'working' ? "bg-zinc-900/80 border-neon-cyan/50 shadow-[0_0_30px_-10px_rgba(0,245,255,0.3)]" : "glass-panel"
       )}
     >
       {/* Active Pulse Ring */}
       {bot.status === 'working' && (
-        <div className="absolute inset-0 border-2 border-indigo-500/20 rounded-2xl animate-pulse" />
+        <div className="absolute inset-0 border-2 border-neon-cyan/20 rounded-2xl animate-pulse" />
       )}
 
       <div className="flex items-start justify-between mb-3">
-        <div className={clsx("p-2 rounded-xl bg-zinc-950/50 border border-white/5", bot.color)}>
+        <div className={clsx("p-2 rounded-xl bg-zinc-950/50 border border-white/5 shadow-inner", bot.color)}>
           <bot.icon className="w-5 h-5" />
         </div>
         <div className="flex flex-col items-end">
           <span className={clsx(
-            "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border",
-            bot.status === 'working' ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/20" : 
+            "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border font-mono",
+            bot.status === 'working' ? "bg-neon-cyan/20 text-neon-cyan border-neon-cyan/20 animate-pulse" : 
             bot.status === 'completed' ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/20" :
             "bg-zinc-800/50 text-zinc-500 border-white/5"
           )}>
@@ -81,15 +82,15 @@ const BotCard: React.FC<{ bot: BotAgent }> = ({ bot }) => {
       </div>
 
       <div className="space-y-1">
-        <h3 className="font-bold text-white text-sm">{bot.name}</h3>
-        <p className="text-xs text-zinc-500">{bot.role}</p>
+        <h3 className="font-display font-bold text-white text-sm tracking-wide group-hover:text-glow">{bot.name}</h3>
+        <p className="text-xs text-zinc-500 font-mono">{bot.role}</p>
       </div>
 
       {/* Progress Bar */}
       <div className="mt-4 h-1 bg-zinc-800 rounded-full overflow-hidden">
         <motion.div 
-          className={clsx("h-full rounded-full transition-all duration-300", 
-            bot.status === 'completed' ? "bg-emerald-500" : "bg-indigo-500"
+          className={clsx("h-full rounded-full transition-all duration-300 shadow-[0_0_10px_currentColor]", 
+            bot.status === 'completed' ? "bg-emerald-500" : "bg-neon-cyan"
           )}
           initial={{ width: 0 }}
           animate={{ width: `${bot.progress}%` }}
@@ -109,10 +110,10 @@ const LogTerminal = ({ logs }: { logs: LogEntry[] }) => {
   }, [logs]);
 
   return (
-    <div className="h-64 bg-zinc-950 rounded-2xl border border-white/10 p-4 font-mono text-xs overflow-hidden flex flex-col">
-      <div className="flex items-center gap-2 text-zinc-500 mb-3 pb-3 border-b border-white/5">
+    <div className="h-64 bg-midnight-blue/90 rounded-2xl border border-neon-cyan/20 p-4 font-mono text-xs overflow-hidden flex flex-col shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
+      <div className="flex items-center gap-2 text-neon-cyan/70 mb-3 pb-3 border-b border-neon-cyan/10">
         <Terminal className="w-3 h-3" />
-        <span className="uppercase tracking-wider font-bold">Production Log</span>
+        <span className="uppercase tracking-wider font-bold text-glow">System Log</span>
         <div className="ml-auto flex gap-1.5">
           <div className="w-2 h-2 rounded-full bg-red-500/50" />
           <div className="w-2 h-2 rounded-full bg-yellow-500/50" />
@@ -133,9 +134,9 @@ const LogTerminal = ({ logs }: { logs: LogEntry[] }) => {
               <div className="flex-1">
                 <span className={clsx(
                   "font-bold mr-2",
-                  log.from === 'sbaro_bot' ? "text-purple-400" :
-                  log.from === 'nassro_bot' ? "text-blue-400" :
-                  log.from === 'mina_bot' ? "text-pink-400" :
+                  log.from === 'sbaro_bot' ? "text-neon-purple" :
+                  log.from === 'nassro_bot' ? "text-neon-cyan" :
+                  log.from === 'mina_bot' ? "text-soft-magenta" :
                   log.from === 'wawa_bot' ? "text-emerald-400" :
                   "text-amber-400"
                 )}>
@@ -148,7 +149,7 @@ const LogTerminal = ({ logs }: { logs: LogEntry[] }) => {
                   </>
                 )}
                 <span className={clsx(
-                  log.type === 'command' ? "text-indigo-300" :
+                  log.type === 'command' ? "text-neon-cyan" :
                   log.type === 'success' ? "text-emerald-300" :
                   "text-zinc-400"
                 )}>
@@ -238,12 +239,12 @@ export default function ProductionDashboard({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]" />
             <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-20" />
           </div>
-          <h2 className="text-lg font-bold text-white tracking-widest uppercase">Live Production</h2>
+          <h2 className="text-lg font-display font-bold text-white tracking-widest uppercase text-glow">Live Production</h2>
         </div>
-        <div className="flex items-center gap-4 text-xs font-mono text-zinc-500">
+        <div className="flex items-center gap-4 text-xs font-mono text-neon-cyan/70">
           <div className="flex items-center gap-2">
             <Cpu className="w-4 h-4" />
             <span>CPU: 42%</span>
@@ -268,10 +269,14 @@ export default function ProductionDashboard({
           <LogTerminal logs={logs} />
         </div>
         
-        <div className="bg-zinc-900/50 rounded-2xl border border-white/5 p-6 flex flex-col justify-center">
-          <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-6">Total Progress</h3>
+        <div className="glass-panel p-6 flex flex-col justify-center relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-20">
+            <Zap className="w-24 h-24 text-neon-cyan" />
+          </div>
           
-          <div className="relative w-48 h-48 mx-auto mb-6">
+          <h3 className="text-sm font-display font-bold text-zinc-400 uppercase tracking-wider mb-6 relative z-10">Total Progress</h3>
+          
+          <div className="relative w-48 h-48 mx-auto mb-6 z-10">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
               <circle
                 className="text-zinc-800"
@@ -283,7 +288,7 @@ export default function ProductionDashboard({
                 cy="50"
               />
               <circle
-                className="text-indigo-500 transition-all duration-300"
+                className="text-neon-cyan transition-all duration-300 drop-shadow-[0_0_8px_rgba(0,245,255,0.5)]"
                 strokeWidth="8"
                 strokeDasharray={251.2}
                 strokeDashoffset={251.2 - (251.2 * overallProgress) / 100}
@@ -296,26 +301,26 @@ export default function ProductionDashboard({
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center flex-col">
-              <span className="text-4xl font-bold text-white">{overallProgress}%</span>
-              <span className="text-xs text-zinc-500 uppercase">Completed</span>
+              <span className="text-4xl font-display font-bold text-white text-glow">{overallProgress}%</span>
+              <span className="text-xs text-zinc-500 uppercase font-mono tracking-widest">Completed</span>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-zinc-500">
+          <div className="space-y-2 relative z-10">
+            <div className="flex justify-between text-xs text-zinc-500 font-mono">
               <span>Story Arc</span>
               <span className="text-emerald-400">100%</span>
             </div>
             <div className="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 w-full" />
+              <div className="h-full bg-emerald-500 w-full shadow-[0_0_10px_currentColor]" />
             </div>
             
-            <div className="flex justify-between text-xs text-zinc-500 mt-2">
+            <div className="flex justify-between text-xs text-zinc-500 mt-2 font-mono">
               <span>Scripting</span>
-              <span className={overallProgress > 30 ? "text-emerald-400" : "text-zinc-600"}>{Math.min(100, Math.floor(overallProgress * 1.5))}%</span>
+              <span className={overallProgress > 30 ? "text-neon-cyan" : "text-zinc-600"}>{Math.min(100, Math.floor(overallProgress * 1.5))}%</span>
             </div>
             <div className="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${Math.min(100, Math.floor(overallProgress * 1.5))}%` }} />
+              <div className="h-full bg-neon-cyan transition-all duration-300 shadow-[0_0_10px_currentColor]" style={{ width: `${Math.min(100, Math.floor(overallProgress * 1.5))}%` }} />
             </div>
           </div>
         </div>
