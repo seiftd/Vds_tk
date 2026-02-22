@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, PlayCircle, TrendingUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -12,7 +13,7 @@ interface Story {
   summary: string;
 }
 
-export default function StoryCard({ story }: { story: Story }) {
+const StoryCard: React.FC<{ story: Story }> = ({ story }) => {
   return (
     <Link 
       to={`/story/${story.id}`}
@@ -70,3 +71,5 @@ export default function StoryCard({ story }: { story: Story }) {
     </Link>
   );
 }
+
+export default StoryCard;

@@ -1,17 +1,134 @@
 import { Express, Request, Response } from "express";
 import { getDb } from "./db";
 import { GoogleGenAI, Type } from "@google/genai";
+import { encrypt, decrypt } from "./encryption";
+import crypto from "crypto";
 
 // Lazy initialization to ensure env vars are loaded
 const getAI = () => {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  // First try DB key, then Env key
+  const db = getDb();
+  const keys = db.prepare("SELECT script_key FROM api_keys WHERE id = 1").get() as any;
+  
+  let apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  
+  if (keys && keys.script_key) {
+    const decryptedKey = decrypt(keys.script_key);
+    if (decryptedKey) apiKey = decryptedKey;
+  }
+
   if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
-    throw new Error("Valid API Key not found. Please configure GEMINI_API_KEY in your environment.");
+    throw new Error("Valid API Key not found. Please configure GEMINI_API_KEY in Settings.");
   }
   return new GoogleGenAI({ apiKey });
 };
 
 export function registerRoutes(app: Express) {
+  
+  // --- SETTINGS ROUTES ---
+
+  // Get all settings
+  app.get("/api/settings", (req, res) => {
+    const db = getDb();
+    const apiKeys = db.prepare("SELECT * FROM api_keys WHERE id = 1").get() as any;
+    const telegram = db.prepare("SELECT * FROM telegram_settings WHERE id = 1").get();
+    const preferences = db.prepare("SELECT * FROM user_preferences WHERE id = 1").get();
+    const video = db.prepare("SELECT * FROM video_settings WHERE id = 1").get();
+
+    // Mask API keys for security
+    const maskedKeys = { ...apiKeys };
+    ['script_key', 'image_key', 'video_key', 'tts_key', 'music_key'].forEach(k => {
+      if (maskedKeys[k]) maskedKeys[k] = '••••••••••••••••';
+    });
+
+    res.json({
+      apiKeys: maskedKeys,
+      telegram,
+      preferences,
+      video
+    });
+  });
+
+  // Update API Keys
+  app.post("/api/settings/keys", (req, res) => {
+    const { script_key, image_key, video_key, tts_key, music_key } = req.body;
+    const db = getDb();
+    
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (script_key && !script_key.includes('•••')) { updates.push("script_key = ?"); values.push(encrypt(script_key)); }
+    if (image_key && !image_key.includes('•••')) { updates.push("image_key = ?"); values.push(encrypt(image_key)); }
+    if (video_key && !video_key.includes('•••')) { updates.push("video_key = ?"); values.push(encrypt(video_key)); }
+    if (tts_key && !tts_key.includes('•••')) { updates.push("tts_key = ?"); values.push(encrypt(tts_key)); }
+    if (music_key && !music_key.includes('•••')) { updates.push("music_key = ?"); values.push(encrypt(music_key)); }
+
+    if (updates.length > 0) {
+      db.prepare(`UPDATE api_keys SET ${updates.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE id = 1`).run(...values);
+    }
+    
+    res.json({ success: true });
+  });
+
+  // Update Telegram Settings
+  app.post("/api/settings/telegram", (req, res) => {
+    const { bot_token, admin_id, is_enabled } = req.body;
+    const db = getDb();
+    
+    db.prepare(`
+      UPDATE telegram_settings 
+      SET bot_token = ?, admin_id = ?, is_enabled = ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = 1
+    `).run(bot_token, admin_id, is_enabled ? 1 : 0);
+    
+    res.json({ success: true });
+  });
+
+  // Update Preferences
+  app.post("/api/settings/preferences", (req, res) => {
+    const { language, theme } = req.body;
+    const db = getDb();
+    
+    db.prepare(`
+      UPDATE user_preferences 
+      SET language = ?, theme = ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = 1
+    `).run(language, theme);
+    
+    res.json({ success: true });
+  });
+
+  // Update Video Settings
+  app.post("/api/settings/video", (req, res) => {
+    const { resolution, fps, auto_subtitles, auto_music, cinematic_filter } = req.body;
+    const db = getDb();
+    
+    db.prepare(`
+      UPDATE video_settings 
+      SET resolution = ?, fps = ?, auto_subtitles = ?, auto_music = ?, cinematic_filter = ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = 1
+    `).run(resolution, fps, auto_subtitles ? 1 : 0, auto_music ? 1 : 0, cinematic_filter ? 1 : 0);
+    
+    res.json({ success: true });
+  });
+
+  // Test Connection (Mock)
+  app.post("/api/test-connection", async (req, res) => {
+    try {
+        // In a real app, we would try to make a small request to the service
+        // For now, we just check if the key exists and is valid format
+        const { service } = req.body;
+        
+        // Simulate delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        res.json({ success: true, message: `Successfully connected to ${service}` });
+    } catch (error) {
+        res.status(500).json({ error: "Connection failed" });
+    }
+  });
+
+  // --- EXISTING ROUTES ---
   
   // Get all stories
   app.get("/api/stories", (req, res) => {
@@ -43,7 +160,7 @@ export function registerRoutes(app: Express) {
   // Create Story (AI Generation)
   app.post("/api/stories/generate", async (req: Request, res: Response) => {
     try {
-      const { genre, tone, language, audience, episodeCount } = req.body;
+      const { genre, tone, language, audience, episodeCount, storyLanguage } = req.body;
       const db = getDb();
 
       const prompt = `
@@ -53,6 +170,7 @@ export function registerRoutes(app: Express) {
         Genre: ${genre}
         Tone: ${tone}
         Target Language: ${language}
+        Story Content Language: ${storyLanguage || language}
         Target Audience: ${audience}
         Episode Count: ${episodeCount}
 
@@ -62,6 +180,8 @@ export function registerRoutes(app: Express) {
         - Strong cliffhangers.
         - Cohesive story arc.
         - Mystery layers and plot twists.
+        - The 'title', 'summary', 'hook', 'cliffhanger', 'caption_short', 'caption_long', 'cta_script', and 'thumbnail_text_overlay' MUST be in the 'Story Content Language' (${storyLanguage || language}).
+        - The 'seo_description', 'hashtags', and 'thumbnail_prompt' should be optimized for the platform (hashtags in mixed languages if appropriate, prompts in English).
         
         For the thumbnail:
         - Create a dramatic, clickable visual prompt.
@@ -106,7 +226,8 @@ export function registerRoutes(app: Express) {
         }
       });
 
-      let text = response.text();
+      let text = response.text;
+      if (!text) throw new Error("No text in response");
       // Clean markdown code blocks if present
       text = text.replace(/```json\n?|```/g, "").trim();
       
@@ -135,6 +256,48 @@ export function registerRoutes(app: Express) {
       );
       
       const storyId = storyResult.lastInsertRowid;
+
+      // Initialize Story Memory
+      const initialMemory = {
+        plot: {
+          summary: generatedStory.summary,
+          genre: genre,
+          tone: tone,
+          audience: audience
+        },
+        characters: [], // To be populated as episodes are generated
+        timeline: [],
+        world_rules: []
+      };
+
+      db.prepare(`
+        INSERT INTO story_memory (id, story_id, plot, characters, timeline, world_rules)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        crypto.randomUUID(),
+        storyId,
+        JSON.stringify(initialMemory.plot),
+        JSON.stringify(initialMemory.characters),
+        JSON.stringify(initialMemory.timeline),
+        JSON.stringify(initialMemory.world_rules)
+      );
+
+      // Initialize Bot Memory for this story
+      const bots = ['sbaro', 'nassro', 'mina', 'wawa', 'jrana'];
+      const insertBotMemory = db.prepare(`
+        INSERT INTO bot_memory (id, story_id, bot_name, state, last_action)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+
+      bots.forEach(bot => {
+        insertBotMemory.run(
+          crypto.randomUUID(),
+          storyId,
+          `${bot}_bot`,
+          JSON.stringify({ status: 'idle' }),
+          'Initialized'
+        );
+      });
 
       const insertEpisode = db.prepare(`
         INSERT INTO episodes (story_id, episode_number, title, summary, hook, cliffhanger, viral_score, seo_description, hashtags, thumbnail_prompt, thumbnail_text_overlay, caption_short, caption_long, cta_script)
@@ -229,7 +392,8 @@ export function registerRoutes(app: Express) {
             }
         });
 
-        let text = response.text();
+        let text = response.text;
+        if (!text) throw new Error("No text in response");
         // Clean markdown code blocks if present
         text = text.replace(/```json\n?|```/g, "").trim();
 

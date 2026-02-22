@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Library, Settings, Film, Menu, X } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Library, Settings, Film, Menu, X, Clapperboard } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -15,6 +15,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Create Story', href: '/create', icon: PlusCircle },
+    { name: 'Production Team', href: '/production', icon: Clapperboard },
     { name: 'Library', href: '/library', icon: Library },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
@@ -72,11 +73,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           <div className="p-4 border-t border-white/10">
             <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-white/5">
-              <p className="text-xs font-medium text-indigo-300 mb-1">Pro Plan</p>
-              <p className="text-xs text-zinc-500 mb-3">12/50 Stories Generated</p>
-              <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-full w-[24%] bg-indigo-500 rounded-full" />
-              </div>
+              <p className="text-xs font-medium text-indigo-300 mb-1">AI Studio Mode</p>
+              <p className="text-xs text-zinc-500">Private Instance • Unlimited</p>
             </div>
           </div>
         </div>

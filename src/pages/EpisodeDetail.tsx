@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Loader2, ArrowLeft, Clapperboard, Camera, Mic, Music, Type, Wand2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Clapperboard, Camera, Mic, Music, Type, Wand2, Share2 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { clsx } from 'clsx';
 

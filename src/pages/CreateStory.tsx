@@ -1,15 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, ChevronDown, ChevronUp } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import Layout from '../components/Layout';
+import ProductionDashboard from '../components/ProductionDashboard';
 
 export default function CreateStory() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
+  const dashboardRef = useRef<HTMLDivElement>(null);
+  
   const [formData, setFormData] = useState({
     genre: 'Mystery',
     tone: 'Suspense',
     language: 'English',
+    storyLanguage: 'English',
     audience: 'Global',
     episodeCount: 10
   });
@@ -17,6 +23,12 @@ export default function CreateStory() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setShowDashboard(true);
+
+    // Scroll to dashboard
+    setTimeout(() => {
+      dashboardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
 
     try {
       const res = await fetch('/api/stories/generate', {
@@ -31,19 +43,25 @@ export default function CreateStory() {
         throw new Error(data.error || 'Failed to generate');
       }
       
-      navigate(`/story/${data.id}`);
+      // Wait a bit for the animation to finish if it hasn't already
+      setTimeout(() => {
+        navigate(`/story/${data.id}`);
+      }, 15000); // Give the user time to enjoy the show (15s)
+
     } catch (error: any) {
       console.error(error);
       alert(`Error: ${error.message}`);
-    } finally {
       setLoading(false);
+      setShowDashboard(false);
     }
   };
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8 text-center">
+      <div className="max-w-4xl mx-auto space-y-8">
+        
+        {/* Header */}
+        <div className="text-center">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 mb-4 border border-indigo-500/20">
             <Sparkles className="w-6 h-6" />
           </div>
@@ -51,7 +69,8 @@ export default function CreateStory() {
           <p className="text-zinc-400">Configure your viral story engine. The AI will handle the rest.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 md:p-8 space-y-6 backdrop-blur-sm">
+        {/* Form Section */}
+        <form onSubmit={handleSubmit} className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 md:p-8 space-y-6 backdrop-blur-sm relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-300">Genre</label>
@@ -87,7 +106,7 @@ export default function CreateStory() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-300">Target Language</label>
+              <label className="text-sm font-medium text-zinc-300">UI Language</label>
               <select 
                 className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
                 value={formData.language}
@@ -100,6 +119,21 @@ export default function CreateStory() {
                 <option>German</option>
                 <option>Japanese</option>
               </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-indigo-300">Story Content Language</label>
+              <select 
+                className="w-full bg-zinc-950 border border-indigo-500/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                value={formData.storyLanguage}
+                onChange={e => setFormData({...formData, storyLanguage: e.target.value})}
+              >
+                <option>English</option>
+                <option>Arabic</option>
+                <option>French</option>
+                <option>Auto Detect</option>
+              </select>
+              <p className="text-xs text-zinc-500">Controls script, voiceover, and subtitles language.</p>
             </div>
 
             <div className="space-y-2">
@@ -140,23 +174,32 @@ export default function CreateStory() {
               disabled={loading}
               className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Generating Story Arc...
-                </>
-              ) : (
-                <>
-                  <Wand2 className="w-5 h-5" />
-                  Generate Full Series
-                </>
-              )}
+              <Wand2 className="w-5 h-5" />
+              {loading ? 'Production Started...' : 'Generate Full Series'}
             </button>
             <p className="text-center text-xs text-zinc-500 mt-4">
               AI will generate the full arc, characters, and episode breakdowns.
             </p>
           </div>
         </form>
+
+        {/* Production Team Section */}
+        <AnimatePresence>
+          {showDashboard && (
+            <motion.div
+              ref={dashboardRef}
+              initial={{ opacity: 0, height: 0, y: 50 }}
+              animate={{ opacity: 1, height: 'auto', y: 0 }}
+              exit={{ opacity: 0, height: 0, y: 50 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="overflow-hidden"
+            >
+              <div className="pt-8 border-t border-white/10">
+                <ProductionDashboard isActive={showDashboard} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </Layout>
   );

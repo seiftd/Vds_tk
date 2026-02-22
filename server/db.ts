@@ -67,6 +67,117 @@ export function initDb() {
       FOREIGN KEY (episode_id) REFERENCES episodes(id) ON DELETE CASCADE
     )
   `);
+
+  // Settings Tables
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS api_keys (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      script_key TEXT,
+      image_key TEXT,
+      video_key TEXT,
+      tts_key TEXT,
+      music_key TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS telegram_settings (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      bot_token TEXT,
+      admin_id TEXT,
+      is_enabled BOOLEAN DEFAULT 0,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_preferences (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      language TEXT DEFAULT 'English',
+      theme TEXT DEFAULT 'dark',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS video_settings (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      resolution TEXT DEFAULT '1080x1920',
+      fps INTEGER DEFAULT 30,
+      auto_subtitles BOOLEAN DEFAULT 1,
+      auto_music BOOLEAN DEFAULT 1,
+      cinematic_filter BOOLEAN DEFAULT 0,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Production Session & Logs
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS production_sessions (
+      id TEXT PRIMARY KEY,
+      story_id INTEGER,
+      status TEXT DEFAULT 'pending',
+      progress INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS bot_logs (
+      id TEXT PRIMARY KEY,
+      session_id TEXT,
+      from_bot TEXT,
+      to_bot TEXT,
+      message TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (session_id) REFERENCES production_sessions(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Memory Tables
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS story_memory (
+      id TEXT PRIMARY KEY,
+      story_id INTEGER,
+      plot TEXT,
+      characters TEXT,
+      timeline TEXT,
+      world_rules TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS episode_memory (
+      id TEXT PRIMARY KEY,
+      story_id INTEGER,
+      episode_number INTEGER,
+      summary TEXT,
+      key_events TEXT,
+      cliffhanger TEXT,
+      FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS bot_memory (
+      id TEXT PRIMARY KEY,
+      story_id INTEGER,
+      bot_name TEXT,
+      state TEXT,
+      last_action TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Initialize default rows if they don't exist
+  db.prepare("INSERT OR IGNORE INTO api_keys (id) VALUES (1)").run();
+  db.prepare("INSERT OR IGNORE INTO telegram_settings (id) VALUES (1)").run();
+  db.prepare("INSERT OR IGNORE INTO user_preferences (id) VALUES (1)").run();
+  db.prepare("INSERT OR IGNORE INTO video_settings (id) VALUES (1)").run();
 }
 
 export function getDb() {
