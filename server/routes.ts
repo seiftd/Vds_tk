@@ -4,6 +4,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { encrypt, decrypt } from "./encryption";
 import crypto from "crypto";
 import { productionEngine } from "./production";
+import { mediaEngine } from "./media_engine";
 
 // Lazy initialization to ensure env vars are loaded
 const getAI = () => {
@@ -26,6 +27,36 @@ const getAI = () => {
 
 export function registerRoutes(app: Express) {
   
+  // --- MEDIA AUTOMATION ROUTES ---
+
+  app.post("/api/media/schedule", async (req, res) => {
+    const { storyId, episodeId, platform, scheduledAt } = req.body;
+    try {
+      const id = await mediaEngine.distributionEngine.schedulePost(storyId, episodeId, platform, new Date(scheduledAt));
+      res.json({ success: true, id });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get("/api/media/analytics/:storyId", async (req, res) => {
+    try {
+      const report = await mediaEngine.analyticsEngine.getPerformanceReport(parseInt(req.params.storyId));
+      res.json(report);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/media/start-automation/:storyId", async (req, res) => {
+    try {
+      await mediaEngine.startFullAutomation(req.params.storyId);
+      res.json({ success: true, message: "Automation started" });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // --- SETTINGS ROUTES ---
 
   // Get all settings
@@ -335,8 +366,8 @@ export function registerRoutes(app: Express) {
         );
       }
 
-      // Start Production Engine
-      productionEngine.startProduction(storyId.toString());
+      // Start Media Automation Engine (instead of just Production)
+      mediaEngine.startFullAutomation(storyId.toString());
 
       res.json({ id: storyId, ...generatedStory });
 

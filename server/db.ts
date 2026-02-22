@@ -207,6 +207,35 @@ export function initDb() {
     )
   `);
 
+  // Scheduled Posts
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS scheduled_posts (
+      id TEXT PRIMARY KEY,
+      story_id INTEGER,
+      episode_id INTEGER,
+      platform TEXT,
+      scheduled_at DATETIME,
+      status TEXT DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Video Analytics
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS video_analytics (
+      id TEXT PRIMARY KEY,
+      story_id INTEGER,
+      platform TEXT,
+      views INTEGER DEFAULT 0,
+      likes INTEGER DEFAULT 0,
+      comments INTEGER DEFAULT 0,
+      retention_score REAL DEFAULT 0.0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
+    )
+  `);
+
   // Initialize default rows if they don't exist
   db.prepare("INSERT OR IGNORE INTO api_keys (id) VALUES (1)").run();
   db.prepare("INSERT OR IGNORE INTO telegram_settings (id) VALUES (1)").run();

@@ -12,7 +12,12 @@ import {
   Terminal,
   Cpu,
   Activity,
-  Zap
+  Zap,
+  Share2,
+  BarChart3,
+  Sparkles,
+  Calendar,
+  ShieldCheck
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -47,6 +52,11 @@ const INITIAL_BOTS: BotAgent[] = [
   { id: 'mina', name: 'mina_bot', role: 'Visual Artist', icon: ImageIcon, color: 'text-soft-magenta', status: 'idle', progress: 0 },
   { id: 'wawa', name: 'wawa_bot', role: 'Audio Engineer', icon: Music, color: 'text-emerald-400', status: 'idle', progress: 0 },
   { id: 'jrana', name: 'jrana_bot', role: 'Video Editor', icon: Film, color: 'text-amber-400', status: 'idle', progress: 0 },
+  { id: 'scene', name: 'scene_bot', role: 'Scene Director', icon: Clapperboard, color: 'text-indigo-400', status: 'idle', progress: 0 },
+  { id: 'guard', name: 'guard_bot', role: 'Continuity', icon: ShieldCheck, color: 'text-red-400', status: 'idle', progress: 0 },
+  { id: 'viral', name: 'viral_bot', role: 'Viral Optimizer', icon: Sparkles, color: 'text-yellow-400', status: 'idle', progress: 0 },
+  { id: 'distro', name: 'distro_bot', role: 'Distribution', icon: Share2, color: 'text-blue-500', status: 'idle', progress: 0 },
+  { id: 'analytics', name: 'analytics_bot', role: 'Analytics', icon: BarChart3, color: 'text-green-500', status: 'idle', progress: 0 },
 ];
 
 // --- Components ---

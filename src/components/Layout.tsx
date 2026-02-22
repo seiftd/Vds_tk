@@ -1,6 +1,20 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Library, Settings, Film, Menu, X, Clapperboard, Zap } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  PlusCircle, 
+  Library, 
+  Settings, 
+  Film, 
+  Menu, 
+  X, 
+  Clapperboard, 
+  Zap,
+  BarChart3,
+  Share2,
+  Calendar,
+  Sparkles
+} from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { motion, AnimatePresence } from 'motion/react';
@@ -16,7 +30,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Create Story', href: '/create', icon: PlusCircle },
-    { name: 'Production Team', href: '/production', icon: Clapperboard },
+    { name: 'Production', href: '/production', icon: Clapperboard },
+    { name: 'Distribution', href: '/distribution', icon: Share2 },
+    { name: 'Scheduler', href: '/scheduler', icon: Calendar },
+    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+    { name: 'Optimization', href: '/optimization', icon: Sparkles },
     { name: 'Library', href: '/library', icon: Library },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
@@ -51,7 +69,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
             {navItems.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -91,7 +109,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                <p className="text-[10px] text-zinc-400 font-mono">v2.4.0-CYBER</p>
+                <p className="text-[10px] text-zinc-400 font-mono">v3.0.0-AUTO</p>
               </div>
             </div>
           </div>

@@ -6,8 +6,9 @@ import { ProductionState, ProductionJob, BotLog } from "./types";
 import { getDb } from "../db";
 import { broadcast } from "../websocket";
 import crypto from "crypto";
+import EventEmitter from "events";
 
-export class ProductionEngine {
+export class ProductionEngine extends EventEmitter {
   private db = getDb();
   private memory = new MemoryManager();
   private guardian = new ContinuityGuardian();
@@ -15,6 +16,7 @@ export class ProductionEngine {
   private queues: Record<string, JobQueue> = {};
 
   constructor() {
+    super();
     this.queues.init = new JobQueue("story-init", this.processInit.bind(this));
     this.queues.script = new JobQueue("script-generation", this.processScript.bind(this));
     this.queues.visual = new JobQueue("visual-generation", this.processVisual.bind(this));
@@ -100,6 +102,9 @@ export class ProductionEngine {
     // Update state
     this.updateState(storyId, ProductionState.COMPLETED);
     this.log('jrana_bot', 'Production complete.', 'sbaro_bot', 'success');
+    
+    // Emit completion event
+    this.emit('completed', { storyId });
   }
 
   private updateState(storyId: string, state: ProductionState) {
